@@ -4,6 +4,7 @@ import math
 import os
 from nsepython import nse_optionchain_scrapper
 from typing import Optional
+import requests
 
 app = FastAPI()
 
@@ -42,10 +43,12 @@ async def get_cpi(region: str = Query(...), data: str = Query(...), year: Option
     }
     
 # Indian Options Chain
-@app.get("/options_chain")
-async def get_options_chain(symbol: str = Query(...)):
+@app.get("/options")
+async def get_options(symbol: str = Query(...)):
     try:
-        data = nse_optionchain_scrapper(symbol)
-        return data
+        url = f"https://raw.githubusercontent.com/ethanelliott50/NSE/main/{symbol.lower()}_option_chain.json"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
     except Exception as e:
         return {"error": str(e)}
