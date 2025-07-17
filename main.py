@@ -6,6 +6,8 @@ from nsepython import nse_optionchain_scrapper
 from nsepython import derivative_history
 from typing import Optional
 import requests
+import urllib.request
+import random
 
 app = FastAPI()
 
@@ -46,16 +48,36 @@ async def get_cpi(region: str = Query(...), data: str = Query(...), year: Option
 # Indian Options Chain
 @app.get("/options_chain")
 async def options_chain(symbol: str = Query(...)):
+    
+    username = os.getenv("PROXY_USERNAME")
+    password = os.getenv("PROXY_PASSWORD")
+    entry = ('http://customer-%s:%s@pr.oxylabs.io:7777' %
+        (username, password))
+    query = urllib.request.ProxyHandler({
+        'http': entry,
+        'https': entry,
+    })
+    execute = urllib.request.build_opener(query)
+    
     try:
-        url = f"https://raw.githubusercontent.com/ethanelliott50/NSE/main/{symbol.lower()}_option_chain.json"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
+        data = nse_optionchain_scrapper(symbol)
+        return data
     except Exception as e:
         return {"error": str(e)}
         
 @app.get("/historical")
 async def historical(symbol: str = Query(...), start_date: str = Query(...), end_date: str = Query(...), expiry_date: str = Query(...), strikePrice: int = Query(...), optionType: str = Query(...)):
+
+    username = os.getenv("PROXY_USERNAME")
+    password = os.getenv("PROXY_PASSWORD")
+    entry = ('http://customer-%s:%s@pr.oxylabs.io:7777' %
+        (username, password))
+    query = urllib.request.ProxyHandler({
+        'http': entry,
+        'https': entry,
+    })
+    execute = urllib.request.build_opener(query)
+    
     try:
         df = derivative_history(symbol, start_date, end_date, "options", expiry_date, strikePrice, optionType)
         return df.to_dict(orient="records")
